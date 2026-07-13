@@ -1,0 +1,13 @@
+{
+  "name": "@allone/server",
+  "scripts": {
+    "dev": "node src/index.js"
+  },
+  "dependencies": {
+    "@allone/logger": "workspace:*",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

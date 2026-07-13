@@ -13,5 +13,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.34.5"
+  "packageManager": "pnpm@10.34.5",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.4"
+  }
 }

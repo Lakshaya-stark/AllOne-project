@@ -1,0 +1,7 @@
+{
+  "name": "@allone/logger",
+  "version": "1.0.0",
+  "exports": {
+    ".": "./src/index.js"
+  }
+}
