@@ -18,3 +18,4 @@ type App struct {
 
 	Logger *slog.Logger
 }
+
