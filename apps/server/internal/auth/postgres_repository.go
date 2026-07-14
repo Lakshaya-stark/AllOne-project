@@ -24,8 +24,8 @@ func (r *PostgresRepository) CreateUser(
 ) error {
 
 	query := `
-INSERT INTO users
-(id, username, email, password_hash, created_at, updated_at)
+INSERT INTO users 
+(id, username, email, password_hash, created_at, updated_at) 
 VALUES ($1,$2,$3,$4,$5,$6)
 `
 
@@ -51,18 +51,54 @@ func (r *PostgresRepository) GetUserByEmail(
 	var user models.User
 
 	query := `
-SELECT
-	id,
-	username,
-	email,
-	password_hash,
-	created_at,
-	updated_at
-FROM users
+SELECT 
+    id, 
+    username, 
+    email, 
+    password_hash, 
+    created_at, 
+    updated_at 
+FROM users 
 WHERE email=$1
 `
 
 	err := r.db.QueryRow(ctx, query, email).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.PasswordHash,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// Added this method to satisfy the Repository interface
+func (r *PostgresRepository) GetUserByID(
+	ctx context.Context,
+	id string,
+) (*models.User, error) {
+
+	var user models.User
+
+	query := `
+SELECT 
+    id, 
+    username, 
+    email, 
+    password_hash, 
+    created_at, 
+    updated_at 
+FROM users 
+WHERE id=$1
+`
+
+	err := r.db.QueryRow(ctx, query, id).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
