@@ -44,7 +44,3 @@ func NewRouter(a *app.App) *chi.Mux {
 	return r
 }
 
-
-
-// curl http://localhost:8080/me \
-// -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiY2YxNDRjMWMtMGRkYy00OGZjLThkYjgtMDRhZjZmMzg5ZTYzIiwiZXhwIjoxNzg0MDUwNzUxLCJpYXQiOjE3ODQwNDk4NTF9.oYwyaKKCzUSfh6PTyPU4gAL1LdLSZtCxaGVJdqwb2us"
