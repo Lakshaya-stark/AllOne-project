@@ -45,10 +45,12 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.Login(r.Context(), req); err != nil {
+	res, err := h.service.Login(r.Context(), req)
+
+	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
-	json.NewEncoder(w).Encode(LoginResponse{})
+	json.NewEncoder(w).Encode(res)
 }

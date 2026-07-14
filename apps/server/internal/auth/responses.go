@@ -8,3 +8,6 @@ type LoginResponse struct {
 type RegisterResponse struct {
 	Message string `json:"message"`
 }
+
+
+
