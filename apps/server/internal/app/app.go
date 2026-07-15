@@ -4,7 +4,7 @@ import (
 	"log/slog"
 
 	"allone/server/internal/config"
-
+	"allone/server/internal/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 )
@@ -13,7 +13,7 @@ type App struct {
 	Config *config.Config
 
 	DB *pgxpool.Pool
-
+	Hub *websocket.Hub
 	Redis *redis.Client
 
 	Logger *slog.Logger

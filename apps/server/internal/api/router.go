@@ -8,7 +8,7 @@ import (
 	"allone/server/internal/auth"
 	"allone/server/internal/device" 
 	"allone/server/internal/middleware"
-
+	"allone/server/internal/websocket"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -17,6 +17,9 @@ func NewRouter(a *app.App) *chi.Mux {
 	r.Use(middleware.RequestLogger(a.Logger))
 	r.Get("/health", HealthHandler(a))
 
+	wsHandler := websocket.NewHandler(a.Hub)
+
+	r.Get("/ws", wsHandler.Connect)
 	// Auth Initialization
 	repo := auth.NewRepository(a.DB)
 	jwtService := auth.NewJWTService(a.Config.JWTSecret)
@@ -52,6 +55,9 @@ func NewRouter(a *app.App) *chi.Mux {
 		r.Route("/devices", func(r chi.Router) {
 			r.Post("/register", deviceHandler.Register)
 			r.Get("/", deviceHandler.List)
+			wsHandler := websocket.NewHandler(a.Hub)
+
+			r.Get("/ws", wsHandler.Connect)
 		})
 	})
 
