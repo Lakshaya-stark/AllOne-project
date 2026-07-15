@@ -6,7 +6,7 @@ import (
 
 	"allone/server/internal/app"
 	"allone/server/internal/auth"
-	"allone/server/internal/device" 
+	"allone/server/internal/device"
 	"allone/server/internal/middleware"
 	"allone/server/internal/websocket"
 	"github.com/go-chi/chi/v5"
@@ -17,17 +17,28 @@ func NewRouter(a *app.App) *chi.Mux {
 	r.Use(middleware.RequestLogger(a.Logger))
 	r.Get("/health", HealthHandler(a))
 
-	wsHandler := websocket.NewHandler(a.Hub)
-
-	r.Get("/ws", wsHandler.Connect)
-	// Auth Initialization
-	repo := auth.NewRepository(a.DB)
+	// 1. Declare these once at the top of the router setup
 	jwtService := auth.NewJWTService(a.Config.JWTSecret)
+	deviceRepo := device.NewRepository(a.DB)
+
+	// Websocket setup
+	wsHandler := websocket.NewHandler(
+		a.Hub,
+		jwtService,
+		deviceRepo,
+	)
+	r.Get("/ws", wsHandler.Connect)
+
+	// Auth Initialization 
+	repo := auth.NewRepository(a.DB)
+	// FIX: Removed the duplicate 'jwtService :=' declaration line entirely 
+	// since we already initialized it above.
 	service := auth.NewService(repo, jwtService)
 	handler := auth.NewHandler(service)
 
 	// Device Initialization
-	deviceRepo := device.NewRepository(a.DB)
+	// FIX: Removed the duplicate 'deviceRepo :=' declaration line entirely
+	// since we already initialized it above.
 	deviceService := device.NewService(deviceRepo)
 	deviceHandler := device.NewHandler(deviceService)
 
@@ -55,9 +66,6 @@ func NewRouter(a *app.App) *chi.Mux {
 		r.Route("/devices", func(r chi.Router) {
 			r.Post("/register", deviceHandler.Register)
 			r.Get("/", deviceHandler.List)
-			wsHandler := websocket.NewHandler(a.Hub)
-
-			r.Get("/ws", wsHandler.Connect)
 		})
 	})
 

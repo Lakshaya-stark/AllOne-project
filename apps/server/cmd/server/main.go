@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -10,23 +9,29 @@ import (
 	"syscall"
 	"time"
 
-	"allone/server/internal/websocket"
-
 	"allone/server/internal/api"
 	"allone/server/internal/app"
 	"allone/server/internal/config"
 	"allone/server/internal/database"
 	"allone/server/internal/logger"
-	
+	"allone/server/internal/websocket"
 )
 
 func main() {
 
+	// ----------------------------
+	// Load Configuration
+	// ----------------------------
 	cfg := config.Load()
 
+	// ----------------------------
+	// Initialize Logger
+	// ----------------------------
 	log := logger.New()
 
-	// 1. Initialize PostgreSQL
+	// ----------------------------
+	// PostgreSQL
+	// ----------------------------
 	db, err := database.NewPostgres(cfg)
 	if err != nil {
 		log.Error("Failed to connect PostgreSQL",
@@ -35,25 +40,35 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
+
 	log.Info("Connected to PostgreSQL")
 
-	// 2. Initialize Redis
+	// ----------------------------
+	// Redis
+	// ----------------------------
 	redisClient, err := database.NewRedis(cfg)
 	if err != nil {
-		log.Error("Failed to connect Redis", 
+		log.Error("Failed to connect Redis",
 			slog.Any("error", err),
 		)
 		os.Exit(1)
 	}
 	defer redisClient.Close()
+
 	log.Info("Connected to Redis")
 
-	// 3. Initialize WebSocket Hub
-	hub := websocket.NewHub() 
-	go hub.Run()
-	log.Info("WebSocket Hub is running")
+	// ----------------------------
+	// WebSocket Hub
+	// ----------------------------
+	hub := websocket.NewHub()
 
-	// 4. Build Application Dependency Container
+	go hub.Run()
+
+	log.Info("WebSocket Hub started")
+
+	// ----------------------------
+	// Dependency Container
+	// ----------------------------
 	application := &app.App{
 		Config: cfg,
 		DB:     db,
@@ -62,46 +77,70 @@ func main() {
 		Hub:    hub,
 	}
 
-	// 5. Setup Router and Server
+	// ----------------------------
+	// HTTP Router
+	// ----------------------------
 	router := api.NewRouter(application)
+
 	server := &http.Server{
-		Addr:         ":" + cfg.AppPort,
-		Handler:      router,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Addr:              ":" + cfg.AppPort,
+		Handler:           router,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	// 6. Start Server HTTP Loop
+	// ----------------------------
+	// Start Server
+	// ----------------------------
 	go func() {
-		fmt.Printf("Server running on port %s\n", cfg.AppPort)
+
+		log.Info(
+			"HTTP Server Started",
+			slog.String("port", cfg.AppPort),
+		)
 
 		if err := server.ListenAndServe(); err != nil &&
 			err != http.ErrServerClosed {
-			panic(err)
+
+			log.Error(
+				"HTTP Server Error",
+				slog.Any("error", err),
+			)
+
+			os.Exit(1)
 		}
 	}()
 
-	// 7. Graceful Shutdown Listeners
+	// ----------------------------
+	// Graceful Shutdown
+	// ----------------------------
 	stop := make(chan os.Signal, 1)
-	signal.Notify(stop,
+
+	signal.Notify(
+		stop,
 		os.Interrupt,
 		syscall.SIGTERM,
 	)
 
 	<-stop
 
-	fmt.Println("Shutting down server...")
+	log.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
-		5*time.Second,
+		10*time.Second,
 	)
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("Server forced to shutdown", slog.Any("error", err))
+
+		log.Error(
+			"Graceful shutdown failed",
+			slog.Any("error", err),
+		)
 	}
 
-	fmt.Println("Server stopped")
+	log.Info("Server stopped")
 }

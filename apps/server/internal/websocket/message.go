@@ -1,13 +1,17 @@
 package websocket
 
-import "encoding/json"
-
-const (
-	MessageHeartbeat = "heartbeat"
-	MessagePong      = "pong"
-)
+import (
+	"github.com/google/uuid"
+	"encoding/json")
 
 type Message struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload"`
+	ID string `json:"id,omitempty"`
+
+	Type MessageType `json:"type"`
+
+	From *uuid.UUID `json:"from,omitempty"`
+
+	To *uuid.UUID `json:"to,omitempty"`
+
+	Payload json.RawMessage `json:"payload,omitempty"`
 }

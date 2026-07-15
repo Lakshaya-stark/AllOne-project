@@ -1,53 +1,58 @@
 package websocket
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/google/uuid"
+)
 
 type Hub struct {
-
-	Clients map[string]*Client
-
-	Register chan *Client
-
-	Unregister chan *Client
-
-	mu sync.RWMutex
+	clients    map[uuid.UUID]*Client
+	register   chan *Client
+	unregister chan *Client
+	mu         sync.RWMutex
 }
 
 func NewHub() *Hub {
-
 	return &Hub{
-
-		Clients: make(map[string]*Client),
-
-		Register: make(chan *Client),
-
-		Unregister: make(chan *Client),
+		clients:    make(map[uuid.UUID]*Client),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
 	}
 }
 
 func (h *Hub) Run() {
-
 	for {
-
 		select {
 
-		case client := <-h.Register:
-
+		case client := <-h.register:
 			h.mu.Lock()
-
-			h.Clients[client.DeviceID.String()] = client
-
+			h.clients[client.DeviceID] = client
 			h.mu.Unlock()
 
-		case client := <-h.Unregister:
-
+		case client := <-h.unregister:
 			h.mu.Lock()
-
-			delete(h.Clients, client.DeviceID.String())
-
-			close(client.Send)
-
+			if _, ok := h.clients[client.DeviceID]; ok {
+				delete(h.clients, client.DeviceID)
+				close(client.Send)
+			}
 			h.mu.Unlock()
 		}
 	}
+}
+
+func (h *Hub) Register(client *Client) {
+	h.register <- client
+}
+
+func (h *Hub) Unregister(client *Client) {
+	h.unregister <- client
+}
+
+func (h *Hub) Client(deviceID uuid.UUID) (*Client, bool) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	client, ok := h.clients[deviceID]
+	return client, ok
 }

@@ -1,24 +1,69 @@
 package websocket
 
 import (
-	"github.com/gorilla/websocket"
+	"log"
+	"time"
+
+	gws "github.com/gorilla/websocket"
 )
 
 func (c *Client) WritePump() {
 
-	defer c.Conn.Close()
+	ticker := time.NewTicker(PingPeriod)
+
+	defer func() {
+
+		ticker.Stop()
+
+		c.Conn.Close()
+
+	}()
 
 	for {
 
 		select {
 
-		case message := <-c.Send:
+		case message, ok := <-c.Send:
 
-			c.Conn.WriteMessage(
-				websocket.TextMessage,
+			c.Conn.SetWriteDeadline(
+				time.Now().Add(WriteWait),
+			)
+
+			if !ok {
+
+				c.Conn.WriteMessage(
+					gws.CloseMessage,
+					[]byte{},
+				)
+
+				return
+			}
+
+			err := c.Conn.WriteMessage(
+				gws.TextMessage,
 				message,
 			)
 
+			if err != nil {
+
+				log.Println(err)
+
+				return
+			}
+
+		case <-ticker.C:
+
+			c.Conn.SetWriteDeadline(
+				time.Now().Add(WriteWait),
+			)
+
+			if err := c.Conn.WriteMessage(
+				gws.PingMessage,
+				nil,
+			); err != nil {
+
+				return
+			}
 		}
 	}
 }

@@ -23,7 +23,7 @@ func (s *Service) Register(
 	ctx context.Context,
 	userID uuid.UUID,
 	req RegisterRequest,
-) error {
+) (*models.Device, error) {
 
 	device := &models.Device{
 		ID:         uuid.New(),
@@ -35,7 +35,11 @@ func (s *Service) Register(
 		CreatedAt:  time.Now(),
 	}
 
-	return s.repo.Register(ctx, device)
+	if err := s.repo.Register(ctx, device); err != nil {
+		return nil, err
+	}
+
+	return device, nil
 }
 
 func (s *Service) ListDevices(
