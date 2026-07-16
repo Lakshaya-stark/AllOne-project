@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
+	"allone/server/internal/presence"
 	"allone/server/internal/api"
 	"allone/server/internal/app"
 	"allone/server/internal/config"
@@ -57,6 +57,15 @@ func main() {
 
 	log.Info("Connected to Redis")
 
+	redisPresence := presence.NewRedisRepository(redisClient)
+
+postgresPresence := presence.NewPostgresRepository(db)
+
+presenceService := presence.NewService(
+	redisPresence,
+	postgresPresence,
+)
+
 	// ----------------------------
 	// WebSocket Hub
 	// ----------------------------
@@ -70,12 +79,14 @@ func main() {
 	// Dependency Container
 	// ----------------------------
 	application := &app.App{
-		Config: cfg,
-		DB:     db,
-		Redis:  redisClient,
-		Logger: log,
-		Hub:    hub,
-	}
+	Config: cfg,
+	DB: db,
+	Redis: redisClient,
+	Logger: log,
+	Hub: hub,
+
+	Presence: presenceService,
+}
 
 	// ----------------------------
 	// HTTP Router

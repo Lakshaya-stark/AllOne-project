@@ -6,7 +6,7 @@ import (
 
 	"allone/server/internal/auth"
 	"allone/server/internal/device"
-
+	"allone/server/internal/presence"
 	"github.com/google/uuid"
 	gws "github.com/gorilla/websocket"
 )
@@ -18,22 +18,28 @@ var upgrader = gws.Upgrader{
 }
 
 type Handler struct {
-	Hub        *Hub
-	JWT        *auth.JWTService
-	DeviceRepo device.Repository
-}
 
+	Hub *Hub
+
+	JWT *auth.JWTService
+
+	DeviceRepo device.Repository
+
+	Presence *presence.Service
+}
 func NewHandler(
 	hub *Hub,
 	jwt *auth.JWTService,
 	repo device.Repository,
+	presence *presence.Service,
 ) *Handler {
 
 	return &Handler{
-		Hub:        hub,
-		JWT:        jwt,
-		DeviceRepo: repo,
-	}
+	Hub: hub,
+	JWT: jwt,
+	DeviceRepo: repo,
+	Presence: presence,
+}
 }
 
 func (h *Handler) Connect(
@@ -107,6 +113,24 @@ func (h *Handler) Connect(
 	// -----------------------------
 	// Create Client
 	// -----------------------------
+
+	err = h.Presence.SetOnline(
+	r.Context(),
+	deviceID,
+)
+
+if err != nil {
+
+	http.Error(
+		w,
+		"failed to update presence",
+		http.StatusInternalServerError,
+	)
+
+	return
+}
+
+
 	client := NewClient(
 		conn,
 		claims.UserID,

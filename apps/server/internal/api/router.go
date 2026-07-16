@@ -23,10 +23,11 @@ func NewRouter(a *app.App) *chi.Mux {
 
 	// Websocket setup
 	wsHandler := websocket.NewHandler(
-		a.Hub,
-		jwtService,
-		deviceRepo,
-	)
+	a.Hub,
+	jwtService,
+	deviceRepo,
+	a.Presence,
+)
 	r.Get("/ws", wsHandler.Connect)
 
 	// Auth Initialization 
