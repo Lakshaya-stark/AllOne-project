@@ -70,7 +70,7 @@ presenceService := presence.NewService(
 	// WebSocket Hub
 	// ----------------------------
 	hub := websocket.NewHub()
-
+	hub.Presence = presenceService
 	go hub.Run()
 
 	log.Info("WebSocket Hub started")

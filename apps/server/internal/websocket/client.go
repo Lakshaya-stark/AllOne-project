@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"context"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,19 +25,20 @@ type Client struct {
 	LastSeen time.Time
 
 	ConnectedAt time.Time
+
+	Context context.Context
+
+	Cancel context.CancelFunc
 }
 
 func NewClient(
-
 	conn *gws.Conn,
-
 	userID uuid.UUID,
-
 	deviceID uuid.UUID,
-
 	hub *Hub,
-
 ) *Client {
+
+	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Client{
 
@@ -55,5 +57,9 @@ func NewClient(
 		LastSeen: time.Now(),
 
 		ConnectedAt: time.Now(),
+
+		Context: ctx,
+
+		Cancel: cancel,
 	}
 }

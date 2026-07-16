@@ -12,11 +12,13 @@ func (c *Client) ReadPump() {
 
 	defer func() {
 
-		c.Hub.Unregister(c)
+	c.Cancel()
 
-		c.Conn.Close()
+	c.Hub.Unregister(c)
 
-	}()
+	_ = c.Conn.Close()
+
+}()
 
 	c.Conn.SetReadLimit(MaxMessageSize)
 
